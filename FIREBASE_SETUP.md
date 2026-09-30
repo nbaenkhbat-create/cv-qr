@@ -23,6 +23,11 @@
 2. Repo дахь `firestore.rules` файлын агуулгыг бүгдийг хуулж paste хий
 3. **Publish** дарна
 
+**Анхаар:**
+- Frontend `Date.now()` (number) илгээдэг; rules мөн `timestamp` (`serverTimestamp()`) зөвшөөрнө.
+- `keys().hasAll(...)` = заавал талбарууд байх ёстой; нэмэлт optional талбар (ж: `phone`, `employerNote`) OK.
+- Дутуу required талбар → `permission-denied`.
+
 ## 5. Indexes (CV жагсаалт ажиллахын тулд)
 
 1. https://console.firebase.google.com/project/cv-qr-6b8d4/firestore/indexes
