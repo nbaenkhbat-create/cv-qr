@@ -1,0 +1,152 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: employers/{uid}
+//   - uid: string (immutable)
+//   - email: string
+//   - username: string
+//   - companyName: string
+//   - phone: string (optional)
+//   - createdAt: number
+//
+// Collection: usernames/{username}
+//   - uid: string
+//   - email: string
+//   - username: string
+//   - createdAt: number
+//
+// Collection: jobs/{jobId}
+//   - employerId: string (immutable)
+//   - title: string
+//   - description: string
+//   - questions: list of maps {id,label,type,required,visibleOnPublic}
+//   - active: bool
+//   - createdAt: number
+//   - updatedAt: number
+//
+// Collection: applications/{appId}
+//   - jobId, employerId, jobTitle, name, phone, email: string
+//   - answers: map
+//   - status: string (new|viewed|approved|rejected|contacted)
+//   - createdAt, updatedAt: number
+//   - employerNote: string (optional)
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isValidEmployer() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['uid', 'email', 'username', 'companyName', 'createdAt'])
+        && d.uid == request.auth.uid
+        && d.email is string
+        && d.username is string
+        && d.username.size() >= 3
+        && d.username.size() <= 30
+        && d.companyName is string
+        && d.companyName.size() > 0
+        && d.companyName.size() < 120
+        && d.createdAt is number;
+    }
+
+    function isValidJobCreate() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['employerId', 'title', 'description', 'questions', 'active', 'createdAt', 'updatedAt'])
+        && d.employerId == request.auth.uid
+        && d.title is string
+        && d.title.size() > 0
+        && d.title.size() < 120
+        && d.description is string
+        && d.questions is list
+        && d.active is bool
+        && d.createdAt is number
+        && d.updatedAt is number;
+    }
+
+    function isValidJobUpdate() {
+      let d = request.resource.data;
+      return d.employerId == resource.data.employerId
+        && d.employerId == request.auth.uid
+        && d.title is string
+        && d.questions is list
+        && d.active is bool
+        && d.updatedAt is number;
+    }
+
+    function isValidApplicationCreate() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['jobId', 'employerId', 'jobTitle', 'name', 'phone', 'email', 'answers', 'status', 'createdAt', 'updatedAt'])
+        && d.jobId is string
+        && d.employerId is string
+        && d.name is string
+        && d.name.size() > 0
+        && d.phone is string
+        && d.phone.size() > 0
+        && d.email is string
+        && d.email.size() > 3
+        && d.answers is map
+        && d.status == 'new'
+        && d.createdAt is number
+        && d.updatedAt is number;
+    }
+
+    match /employers/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidEmployer();
+      allow update: if isOwner(uid)
+        && request.resource.data.uid == resource.data.uid
+        && isValidEmployer();
+      allow delete: if false;
+    }
+
+    // Public get for login username → email lookup
+    match /usernames/{username} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasAll(['uid', 'email', 'username', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.username == username
+        && request.resource.data.email is string
+        && request.resource.data.createdAt is number;
+      allow update, delete: if false;
+    }
+
+    match /jobs/{jobId} {
+      // Public read needed for apply form + QR CV flow
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidJobCreate();
+      allow update: if isAuthenticated()
+        && resource.data.employerId == request.auth.uid
+        && isValidJobUpdate();
+      allow delete: if isAuthenticated()
+        && resource.data.employerId == request.auth.uid;
+    }
+
+    match /applications/{appId} {
+      // Public read for shared CV QR page; create by applicants (no auth)
+      allow read: if true;
+      allow create: if isValidApplicationCreate();
+      allow update: if isAuthenticated()
+        && resource.data.employerId == request.auth.uid
+        && request.resource.data.employerId == resource.data.employerId
+        && request.resource.data.jobId == resource.data.jobId
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.phone == resource.data.phone
+        && request.resource.data.status in ['new', 'viewed', 'approved', 'rejected', 'contacted'];
+      allow delete: if isAuthenticated()
+        && resource.data.employerId == request.auth.uid;
+    }
+  }
+}
