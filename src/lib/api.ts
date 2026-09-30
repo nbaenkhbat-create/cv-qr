@@ -20,13 +20,15 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore'
-import { auth, db } from './firebase'
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { auth, db, storage } from './firebase'
 import type {
   Application,
   ApplicationStatus,
   EmployerProfile,
   Job,
   JobQuestion,
+  PublicCvVisibility,
 } from '../types'
 
 function now() {
@@ -242,6 +244,73 @@ export async function updateQuestionVisibility(
   questions: JobQuestion[],
 ) {
   await updateDoc(doc(db, 'jobs', jobId), { questions, updatedAt: now() })
+}
+
+export async function updatePublicCv(
+  appId: string,
+  data: { publicVisibility: PublicCvVisibility; photoUrl?: string },
+) {
+  const payload: Record<string, unknown> = {
+    publicVisibility: data.publicVisibility,
+    updatedAt: now(),
+  }
+  if (data.photoUrl !== undefined) payload.photoUrl = data.photoUrl
+  await updateDoc(doc(db, 'applications', appId), payload)
+}
+
+function compressImage(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const max = 480
+      const scale = Math.min(1, max / Math.max(img.width, img.height))
+      canvas.width = Math.max(1, Math.round(img.width * scale))
+      canvas.height = Math.max(1, Math.round(img.height * scale))
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('Canvas алдаа'))
+        return
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(url)
+          if (!blob) reject(new Error('Зураг шахаж чадсангүй'))
+          else resolve(blob)
+        },
+        'image/jpeg',
+        0.82,
+      )
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Зураг уншиж чадсангүй'))
+    }
+    img.src = url
+  })
+}
+
+export async function uploadCvPhoto(appId: string, file: File): Promise<string> {
+  const blob = await compressImage(file)
+  try {
+    const path = `cv-photos/${appId}.jpg`
+    const storageRef = ref(storage, path)
+    await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' })
+    return await getDownloadURL(storageRef)
+  } catch {
+    return await blobToDataUrl(blob)
+  }
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error('Зураг уншиж чадсангүй'))
+    reader.readAsDataURL(blob)
+  })
 }
 
 export function appBasePath() {

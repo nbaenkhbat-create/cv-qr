@@ -123,7 +123,9 @@ service cloud.firestore {
         && d.status in ['new', 'viewed', 'approved', 'rejected', 'contacted']
         && isTime(d.createdAt)
         && isTime(d.updatedAt)
-        && (!('employerNote' in d) || d.employerNote is string);
+        && (!('employerNote' in d) || d.employerNote is string)
+        && (!('photoUrl' in d) || d.photoUrl is string)
+        && (!('publicVisibility' in d) || d.publicVisibility is map);
     }
 
     match /employers/{uid} {

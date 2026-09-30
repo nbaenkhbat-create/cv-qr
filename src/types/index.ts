@@ -38,6 +38,13 @@ export interface ApplicationAnswers {
   [questionId: string]: string
 }
 
+export interface PublicCvVisibility {
+  showPhone: boolean
+  showEmail: boolean
+  showPhoto: boolean
+  questions: Record<string, boolean>
+}
+
 export interface Application {
   id: string
   jobId: string
@@ -51,8 +58,6 @@ export interface Application {
   createdAt: number
   updatedAt: number
   employerNote?: string
-}
-
-export interface PublicCvVisibility {
-  [fieldKey: string]: boolean
+  photoUrl?: string
+  publicVisibility?: PublicCvVisibility
 }

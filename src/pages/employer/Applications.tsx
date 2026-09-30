@@ -200,8 +200,8 @@ export function ApplicationDetailPage() {
         <button type="button" className="btn btn-danger" onClick={reject}>
           <X size={18} /> Татгалзах
         </button>
-        <Link className="btn btn-ghost" to={`/cv/${app.id}`} target="_blank">
-          Нийтийн CV харах
+        <Link className="btn btn-ghost" to={`/cv/${app.id}`}>
+          Нийтийн CV засах / харах
         </Link>
       </div>
 
