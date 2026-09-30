@@ -5,23 +5,25 @@ import type { Application } from '../types'
 interface Props {
   application: Application
   onClose: () => void
-  /** sendEmail=true үед note/imэйл бичвэр дамжина */
   onApproved: (opts: { sendEmail: boolean; note?: string }) => Promise<void>
 }
 
-function openMailtoCompose(to: string, subject: string, body: string) {
-  const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-  const iframe = document.createElement('iframe')
-  iframe.style.display = 'none'
-  iframe.setAttribute('aria-hidden', 'true')
-  iframe.src = mailto
-  document.body.appendChild(iframe)
-  window.setTimeout(() => iframe.remove(), 2000)
+export function gmailComposeUrl(to: string, subject: string, body: string) {
+  const params = new URLSearchParams({
+    view: 'cm',
+    fs: '1',
+    tf: '1',
+    to,
+    su: subject,
+    body,
+  })
+  return `https://mail.google.com/mail/?${params.toString()}`
 }
 
 export function EmailModal({ application, onClose, onApproved }: Props) {
   const [step, setStep] = useState<'choose' | 'compose' | 'done'>('choose')
   const [sentMail, setSentMail] = useState(false)
+  const [gmailUrl, setGmailUrl] = useState('')
   const [subject, setSubject] = useState(
     `CV QR — ${application.jobTitle} ярилцлагын урилга`,
   )
@@ -49,35 +51,12 @@ export function EmailModal({ application, onClose, onApproved }: Props) {
     setSending(true)
     setError('')
     try {
-      let delivered = false
-      try {
-        const res = await fetch(
-          `https://formsubmit.co/ajax/${encodeURIComponent(application.email)}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-            },
-            body: JSON.stringify({
-              name: 'CV QR',
-              subject,
-              message: body,
-              _replyto: application.email,
-              _template: 'box',
-              _captcha: 'false',
-            }),
-          },
-        )
-        delivered = res.ok
-      } catch {
-        delivered = false
+      const url = gmailComposeUrl(application.email, subject, body)
+      setGmailUrl(url)
+      const popup = window.open(url, '_blank', 'noopener,noreferrer')
+      if (!popup) {
+        setError('Цонх хаагдсан. Доорх «Gmail нээх» холбоос дээр дарна уу.')
       }
-
-      if (!delivered) {
-        openMailtoCompose(application.email, subject, body)
-      }
-
       await onApproved({ sendEmail: true, note: body })
       setSentMail(true)
       setStep('done')
@@ -101,7 +80,11 @@ export function EmailModal({ application, onClose, onApproved }: Props) {
         {step === 'choose' && (
           <div className="stack">
             <p className="muted">
-              <strong>{application.name}</strong>-ийн CV-г зөвшөөрөхдөө Gmail илгээх үү?
+              <strong>{application.name}</strong> · {application.email}
+            </p>
+            <p className="hint">
+              Gmail илгээх бол таны Gmail нээгдэж, хүлээн авагч/гарчиг/зурвас бөглөгдөнө.
+              Тэнд <strong>Илгээх</strong> дарснаар ажил хайгчид очно.
             </p>
             <button
               type="button"
@@ -137,7 +120,10 @@ export function EmailModal({ application, onClose, onApproved }: Props) {
               <span>Зурвас (та өөрөө бичнэ)</span>
               <textarea rows={8} value={body} onChange={(e) => setBody(e.target.value)} />
             </label>
-            <p className="hint">Имэйл илгээгдэж, CV «Зөвшөөрсөн» болно. Хуудас солигдохгүй.</p>
+            <p className="hint">
+              Дараах товч таны Gmail-ийг нээнэ. Gmail дээр <strong>Илгээх</strong> дарна уу —
+              тэгж байж ажил хайгчийн {application.email} хаяг руу очно.
+            </p>
             {error && <p className="error">{error}</p>}
             <div className="action-row">
               <button
@@ -146,7 +132,7 @@ export function EmailModal({ application, onClose, onApproved }: Props) {
                 disabled={sending}
                 onClick={approveWithEmail}
               >
-                <Send size={18} /> {sending ? 'Илгээж байна…' : 'Илгээх · Зөвшөөрөх'}
+                <Send size={18} /> {sending ? 'Нээж байна…' : 'Gmail нээх · зөвшөөрөх'}
               </button>
               <button
                 type="button"
@@ -168,12 +154,17 @@ export function EmailModal({ application, onClose, onApproved }: Props) {
                 <strong>CV зөвшөөрөгдлөө</strong>
                 <p className="muted">
                   {sentMail
-                    ? 'Gmail илгээх арга хэмжээ авсан. Хэрэв compose нээгдсэн бол «Илгээх» дарна уу.'
+                    ? 'Gmail цонхонд «Илгээх» дарж дуусгана уу. Тэгж байж ажил хайгчид очно.'
                     : 'Gmail илгээгээгүй. Зөвхөн статус «Зөвшөөрсөн» болсон.'}
                 </p>
               </div>
             </div>
-            <button type="button" className="btn btn-primary" onClick={onClose}>
+            {sentMail && gmailUrl && (
+              <a className="btn btn-primary" href={gmailUrl} target="_blank" rel="noreferrer">
+                <Mail size={18} /> Gmail дахин нээх
+              </a>
+            )}
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
               Хаах
             </button>
           </div>

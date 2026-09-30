@@ -34,8 +34,8 @@ export function ApplicationsPage() {
   const filtered = useMemo(() => {
     return apps.filter((a) => {
       if (filter !== 'all' && a.status !== filter) return false
-      if (q && !`${a.name} ${a.jobTitle} ${a.email}`.toLowerCase().includes(q.toLowerCase()))
-        return false
+      const hay = `${a.name} ${a.jobTitle} ${a.email} ${a.phone}`.toLowerCase()
+      if (q && !hay.includes(q.toLowerCase())) return false
       return true
     })
   }, [apps, filter, q])
@@ -82,6 +82,8 @@ export function ApplicationsPage() {
               <th>#</th>
               <th>Нэр</th>
               <th>Мэргэжил / Ажил</th>
+              <th>Утас</th>
+              <th>Gmail</th>
               <th>Огноо</th>
               <th>Статус</th>
               <th>Үйлдэл</th>
@@ -93,6 +95,12 @@ export function ApplicationsPage() {
                 <td>{i + 1}</td>
                 <td>{a.name}</td>
                 <td>{a.jobTitle}</td>
+                <td>
+                  <a href={`tel:${a.phone}`}>{a.phone || '—'}</a>
+                </td>
+                <td>
+                  <a href={`mailto:${a.email}`}>{a.email || '—'}</a>
+                </td>
                 <td>{new Date(a.createdAt).toLocaleDateString('mn-MN')}</td>
                 <td>
                   <span className={`badge status-${a.status}`}>
@@ -166,6 +174,24 @@ export function ApplicationDetailPage() {
         </div>
         <span className={`badge status-${app.status}`}>{STATUS_LABEL[app.status]}</span>
       </header>
+
+      <section className="panel">
+        <h2>Холбоо барих</h2>
+        <dl className="answer-list">
+          <div>
+            <dt>Утас</dt>
+            <dd>
+              <a href={`tel:${app.phone}`}>{app.phone || '—'}</a>
+            </dd>
+          </div>
+          <div>
+            <dt>Gmail</dt>
+            <dd>
+              <a href={`mailto:${app.email}`}>{app.email || '—'}</a>
+            </dd>
+          </div>
+        </dl>
+      </section>
 
       <div className="action-row">
         <button type="button" className="btn btn-primary" onClick={() => setShowApprove(true)}>

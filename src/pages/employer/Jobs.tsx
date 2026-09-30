@@ -297,7 +297,7 @@ export function EmployerQrPage() {
                   size={180}
                 />
                 <p className="muted center">
-                  {a.email} · {new Date(a.createdAt).toLocaleDateString('mn-MN')}
+                  {a.phone} · {a.email}
                 </p>
               </div>
             ))}
