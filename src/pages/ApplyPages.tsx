@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PublicHeader } from '../components/Layout'
-import { getJob, submitApplication } from '../lib/api'
+import { getJob, submitApplication, firebaseErrorMessage } from '../lib/api'
 import type { Job } from '../types'
 import { Send } from 'lucide-react'
 
@@ -50,7 +50,7 @@ export function ApplyPage() {
       })
       navigate('/apply/success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Илгээхэд алдаа гарлаа')
+      setError(firebaseErrorMessage(err, 'Илгээхэд алдаа гарлаа'))
     } finally {
       setLoading(false)
     }

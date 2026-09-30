@@ -8,6 +8,7 @@ import {
   getJobsByEmployer,
   updateJob,
   updateQuestionVisibility,
+  firebaseErrorMessage,
 } from '../../lib/api'
 import type { Job, JobQuestion } from '../../types'
 import { QrDownloadCard } from '../../components/QrDownloadCard'
@@ -83,7 +84,7 @@ export function JobCreatePage() {
       const id = await createJob(user.uid, { title, description, questions })
       navigate(`/employer/jobs/${id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Алдаа гарлаа')
+      setError(firebaseErrorMessage(err, 'Алдаа гарлаа'))
     } finally {
       setLoading(false)
     }

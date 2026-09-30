@@ -3,6 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import { Html5Qrcode } from 'html5-qrcode'
 import { PublicHeader } from '../components/Layout'
 import { Flashlight, FlashlightOff } from 'lucide-react'
+import { appBasePath } from '../lib/api'
+
+function routeFromQrPayload(decoded: string) {
+  const base = appBasePath()
+  let path = decoded
+  try {
+    path = new URL(decoded).pathname
+  } catch {
+    path = decoded.replace(/^https?:\/\/[^/]+/, '')
+  }
+  if (base && path.startsWith(base)) {
+    path = path.slice(base.length) || '/'
+  }
+  if (!path.startsWith('/')) path = `/${path}`
+  return path
+}
 
 export function ScanPage() {
   const navigate = useNavigate()
@@ -30,17 +46,12 @@ export function ScanPage() {
             if (started.current) return
             started.current = true
             scanner.stop().catch(() => {})
-            try {
-              const url = new URL(decoded)
-              navigate(url.pathname + url.search)
-            } catch {
-              if (decoded.includes('/apply/') || decoded.includes('/cv/')) {
-                const path = decoded.replace(/^https?:\/\/[^/]+/, '')
-                navigate(path)
-              } else {
-                setError('QR танигдсангүй: ' + decoded)
-                started.current = false
-              }
+            const path = routeFromQrPayload(decoded)
+            if (path.includes('/apply/') || path.includes('/cv/')) {
+              navigate(path)
+            } else {
+              setError('QR танигдсангүй: ' + decoded)
+              started.current = false
             }
           },
           () => {},

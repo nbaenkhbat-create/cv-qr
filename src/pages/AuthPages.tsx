@@ -5,6 +5,7 @@ import {
   loginEmployer,
   registerEmployer,
   resetPasswordByGmail,
+  firebaseErrorMessage,
 } from '../lib/api'
 
 export function LoginPage() {
@@ -26,7 +27,7 @@ export function LoginPage() {
       await loginEmployer(username.trim(), password)
       navigate('/employer')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Нэвтрэхэд алдаа гарлаа')
+      setError(firebaseErrorMessage(err, 'Нэвтрэхэд алдаа гарлаа'))
     } finally {
       setLoading(false)
     }
@@ -41,7 +42,7 @@ export function LoginPage() {
       await resetPasswordByGmail(resetEmail)
       setResetMsg('Нууц үг сэргээх холбоосыг Gmail руу илгээлээ. Имэйлээ шалгана уу.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Сэргээхэд алдаа гарлаа')
+      setError(firebaseErrorMessage(err, 'Сэргээхэд алдаа гарлаа'))
     } finally {
       setResetLoading(false)
     }
@@ -164,7 +165,7 @@ export function RegisterPage() {
       })
       navigate('/employer')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Бүртгэхэд алдаа гарлаа')
+      setError(firebaseErrorMessage(err, 'Бүртгэхэд алдаа гарлаа'))
     } finally {
       setLoading(false)
     }

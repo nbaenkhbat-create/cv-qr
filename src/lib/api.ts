@@ -33,6 +33,39 @@ function now() {
   return Date.now()
 }
 
+/** User-facing Firebase / Firestore error messages (MN) */
+export function firebaseErrorMessage(err: unknown, fallback = 'Алдаа гарлаа') {
+  const code =
+    err && typeof err === 'object' && 'code' in err
+      ? String((err as { code?: string }).code)
+      : ''
+  const msg = err instanceof Error ? err.message : ''
+
+  if (
+    code.includes('permission-denied') ||
+    msg.includes('permission-denied') ||
+    msg.includes('Missing or insufficient permissions')
+  ) {
+    return 'Firestore эрх хаалттай (permission-denied). Firebase Console → Firestore → Rules дээр rules-ийг publish хийнэ үү.'
+  }
+  if (code.includes('unavailable') || msg.includes('Firestore')) {
+    return 'Firestore холбогдохгүй байна. Database үүсгэсэн эсэхээ шалгана уу.'
+  }
+  if (code.includes('auth/email-already-in-use')) {
+    return 'Энэ Gmail аль хэдийн бүртгэлтэй'
+  }
+  if (code.includes('auth/wrong-password') || code.includes('auth/invalid-credential')) {
+    return 'Нэвтрэх нэр эсвэл нууц үг буруу'
+  }
+  if (code.includes('auth/user-not-found')) {
+    return 'Хэрэглэгч олдсонгүй'
+  }
+  if (code.includes('auth/too-many-requests')) {
+    return 'Хэт олон оролдлого. Түр хүлээнэ үү.'
+  }
+  return msg || fallback
+}
+
 export function normalizeUsername(username: string) {
   return username.trim().toLowerCase()
 }
@@ -211,12 +244,23 @@ export async function updateQuestionVisibility(
   await updateDoc(doc(db, 'jobs', jobId), { questions, updatedAt: now() })
 }
 
+export function appBasePath() {
+  return (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+}
+
+/** Absolute public URL that includes GitHub Pages base (/cv-qr) */
+export function publicUrl(path: string) {
+  const base = appBasePath()
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  return `${window.location.origin}${base}${normalized}`
+}
+
 export function applyUrl(jobId: string) {
-  return `${window.location.origin}/apply/${jobId}`
+  return publicUrl(`/apply/${jobId}`)
 }
 
 export function cvUrl(applicationId: string) {
-  return `${window.location.origin}/cv/${applicationId}`
+  return publicUrl(`/cv/${applicationId}`)
 }
 
 export type { User }

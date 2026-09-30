@@ -23,7 +23,7 @@ import { HelpPage, ProfilePage, SettingsPage } from './pages/MiscPages'
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/cv-qr">
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
