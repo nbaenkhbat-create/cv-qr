@@ -67,7 +67,7 @@ export function EmployerLayout() {
             <FileText size={18} /> Ирсэн CV
           </NavLink>
           <NavLink to="/employer/qr">
-            <QrCode size={18} /> QR код
+            <QrCode size={18} /> CV QR
           </NavLink>
           <NavLink to="/employer/profile">
             <User size={18} /> Профайл

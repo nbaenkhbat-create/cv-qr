@@ -4,13 +4,15 @@ import { useAuth } from '../../context/AuthContext'
 import {
   applyUrl,
   createJob,
+  cvUrl,
+  getApplicationsByEmployer,
   getJob,
   getJobsByEmployer,
   updateJob,
   updateQuestionVisibility,
   firebaseErrorMessage,
 } from '../../lib/api'
-import type { Job, JobQuestion } from '../../types'
+import type { Application, Job, JobQuestion } from '../../types'
 import { QrDownloadCard } from '../../components/QrDownloadCard'
 import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react'
 
@@ -263,23 +265,49 @@ export function JobDetailPage() {
 
 export function EmployerQrPage() {
   const { user } = useAuth()
-  const [jobs, setJobs] = useState<Job[]>([])
+  const [apps, setApps] = useState<Application[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!user) return
-    getJobsByEmployer(user.uid).then(setJobs)
+    getApplicationsByEmployer(user.uid)
+      .then(setApps)
+      .finally(() => setLoading(false))
   }, [user])
 
   return (
     <div className="dash">
-      <h1>QR кодууд</h1>
-      <p className="muted">Ажил байр бүрийн QR-ийг татаж аваарай.</p>
-      <div className="qr-grid">
-        {jobs.map((job) => (
-          <QrDownloadCard key={job.id} value={applyUrl(job.id)} title={job.title} size={180} />
-        ))}
-      </div>
-      {jobs.length === 0 && <p className="muted">Эхлээд ажил байр үүсгэнэ үү.</p>}
+      <h1>CV QR кодууд</h1>
+      <p className="muted">
+        Ажил хайгчдын илгээсэн CV бүрийн QR. Уншуулахад тухайн хүний хариулт бүхий CV
+        нээгдэнэ. (Ажил байрны анкет QR энд биш — ажил байр дээрээс авна.)
+      </p>
+      {loading ? (
+        <div className="spinner" />
+      ) : (
+        <>
+          <div className="qr-grid">
+            {apps.map((a) => (
+              <div key={a.id} className="qr-with-meta">
+                <QrDownloadCard
+                  value={cvUrl(a.id)}
+                  title={`${a.name} — ${a.jobTitle}`}
+                  size={180}
+                />
+                <p className="muted center">
+                  {a.email} · {new Date(a.createdAt).toLocaleDateString('mn-MN')}
+                </p>
+              </div>
+            ))}
+          </div>
+          {apps.length === 0 && (
+            <p className="muted">
+              Одоогоор ирсэн CV алга. Ажил хайгч анкет бөглөсний дараа энд CV QR гарна.
+            </p>
+          )}
+        </>
+      )}
     </div>
   )
 }
+
