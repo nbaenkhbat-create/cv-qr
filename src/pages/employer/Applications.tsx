@@ -11,6 +11,7 @@ import {
 import type { Application, ApplicationStatus, Job } from '../../types'
 import { EmailModal } from '../../components/EmailModal'
 import { QrDownloadCard } from '../../components/QrDownloadCard'
+import { MobileBottomNav } from '../../components/Layout'
 import { Check, Search, X } from 'lucide-react'
 
 const STATUS_LABEL: Record<ApplicationStatus, string> = {
@@ -109,6 +110,7 @@ export function ApplicationsPage() {
         </table>
         {filtered.length === 0 && <p className="muted center pad">CV олдсонгүй</p>}
       </div>
+      <MobileBottomNav />
     </div>
   )
 }
@@ -117,7 +119,7 @@ export function ApplicationDetailPage() {
   const { appId } = useParams()
   const [app, setApp] = useState<Application | null>(null)
   const [job, setJob] = useState<Job | null>(null)
-  const [showMail, setShowMail] = useState(false)
+  const [showApprove, setShowApprove] = useState(false)
 
   useEffect(() => {
     if (!appId) return
@@ -146,7 +148,10 @@ export function ApplicationDetailPage() {
     setApp({ ...app!, status: 'rejected' })
   }
 
-  async function onMailSent(note: string) {
+  async function onApproved(opts: { sendEmail: boolean; note?: string }) {
+    const note = opts.sendEmail
+      ? opts.note || ''
+      : 'Gmail илгээгээгүй — зөвхөн зөвшөөрсөн'
     await updateApplicationStatus(app!.id, 'approved', note)
     setApp({ ...app!, status: 'approved', employerNote: note })
   }
@@ -165,8 +170,8 @@ export function ApplicationDetailPage() {
       </header>
 
       <div className="action-row">
-        <button type="button" className="btn btn-primary" onClick={() => setShowMail(true)}>
-          <Check size={18} /> Зөвшөөрөх · Имэйл бичих
+        <button type="button" className="btn btn-primary" onClick={() => setShowApprove(true)}>
+          <Check size={18} /> Зөвшөөрөх
         </button>
         <button type="button" className="btn btn-danger" onClick={reject}>
           <X size={18} /> Татгалзах
@@ -202,11 +207,11 @@ export function ApplicationDetailPage() {
         </div>
       </div>
 
-      {showMail && (
+      {showApprove && (
         <EmailModal
           application={app}
-          onClose={() => setShowMail(false)}
-          onSent={onMailSent}
+          onClose={() => setShowApprove(false)}
+          onApproved={onApproved}
         />
       )}
     </div>

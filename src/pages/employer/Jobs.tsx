@@ -14,6 +14,7 @@ import {
 } from '../../lib/api'
 import type { Application, Job, JobQuestion } from '../../types'
 import { QrDownloadCard } from '../../components/QrDownloadCard'
+import { MobileBottomNav } from '../../components/Layout'
 import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react'
 
 function newQuestion(): JobQuestion {
@@ -53,6 +54,7 @@ export function JobsListPage() {
           </li>
         ))}
       </ul>
+      <MobileBottomNav />
     </div>
   )
 }
@@ -307,6 +309,7 @@ export function EmployerQrPage() {
           )}
         </>
       )}
+      <MobileBottomNav />
     </div>
   )
 }

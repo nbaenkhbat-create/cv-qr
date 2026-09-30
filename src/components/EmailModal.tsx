@@ -1,27 +1,27 @@
 import { useState } from 'react'
-import { Send, X, CheckCircle2 } from 'lucide-react'
+import { Send, X, CheckCircle2, Mail, MailX } from 'lucide-react'
 import type { Application } from '../types'
 
 interface Props {
   application: Application
   onClose: () => void
-  onSent: (note: string) => Promise<void>
+  /** sendEmail=true үед note/imэйл бичвэр дамжина */
+  onApproved: (opts: { sendEmail: boolean; note?: string }) => Promise<void>
 }
 
 function openMailtoCompose(to: string, subject: string, body: string) {
   const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-  // iframe — цагаан хоосон tab/цонх нээхгүй, SPA дээр үлдэнэ
   const iframe = document.createElement('iframe')
   iframe.style.display = 'none'
   iframe.setAttribute('aria-hidden', 'true')
   iframe.src = mailto
   document.body.appendChild(iframe)
-  window.setTimeout(() => {
-    iframe.remove()
-  }, 2000)
+  window.setTimeout(() => iframe.remove(), 2000)
 }
 
-export function EmailModal({ application, onClose, onSent }: Props) {
+export function EmailModal({ application, onClose, onApproved }: Props) {
+  const [step, setStep] = useState<'choose' | 'compose' | 'done'>('choose')
+  const [sentMail, setSentMail] = useState(false)
   const [subject, setSubject] = useState(
     `CV QR — ${application.jobTitle} ярилцлагын урилга`,
   )
@@ -29,14 +29,26 @@ export function EmailModal({ application, onClose, onSent }: Props) {
     `Сайн байна уу ${application.name},\n\nТаны илгээсэн CV-г хүлээн авч, зөвшөөрлөө.\nБид тантай удахгүй холбогдоно.\n\nХүндэтгэсэн,\nАжил олгогч`,
   )
   const [sending, setSending] = useState(false)
-  const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleSend() {
+  async function approveWithoutEmail() {
     setSending(true)
     setError('')
     try {
-      // 1) Бодит имэйл илгээх оролдлого (FormSubmit → ажил хайгчийн Gmail)
+      await onApproved({ sendEmail: false })
+      setSentMail(false)
+      setStep('done')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Алдаа гарлаа')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  async function approveWithEmail() {
+    setSending(true)
+    setError('')
+    try {
       let delivered = false
       try {
         const res = await fetch(
@@ -62,13 +74,13 @@ export function EmailModal({ application, onClose, onSent }: Props) {
         delivered = false
       }
 
-      // 2) Хэрэв шууд илгээгдээгүй бол Gmail compose нээнэ (цагаан дэлгэцгүй)
       if (!delivered) {
         openMailtoCompose(application.email, subject, body)
       }
 
-      await onSent(body)
-      setDone(true)
+      await onApproved({ sendEmail: true, note: body })
+      setSentMail(true)
+      setStep('done')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Илгээхэд алдаа гарлаа')
     } finally {
@@ -80,29 +92,38 @@ export function EmailModal({ application, onClose, onSent }: Props) {
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal">
         <div className="modal-head">
-          <h3>Имэйл илгээх</h3>
+          <h3>CV зөвшөөрөх</h3>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Хаах">
             <X size={20} />
           </button>
         </div>
 
-        {done ? (
+        {step === 'choose' && (
           <div className="stack">
-            <div className="ok-banner">
-              <CheckCircle2 size={28} />
-              <div>
-                <strong>Зөвшөөрөгдөж, имэйл бэлдлээ</strong>
-                <p className="muted">
-                  Хэрэв Gmail compose нээгдсэн бол «Илгээх» товчийг дарна уу. CV статус
-                  «Зөвшөөрсөн» болсон.
-                </p>
-              </div>
-            </div>
-            <button type="button" className="btn btn-primary" onClick={onClose}>
-              Хаах
+            <p className="muted">
+              <strong>{application.name}</strong>-ийн CV-г зөвшөөрөхдөө Gmail илгээх үү?
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={sending}
+              onClick={() => setStep('compose')}
+            >
+              <Mail size={18} /> Gmail илгээх
             </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={sending}
+              onClick={approveWithoutEmail}
+            >
+              <MailX size={18} /> {sending ? 'Хадгалж байна…' : 'Gmail илгээхгүй · Зөвхөн зөвшөөрөх'}
+            </button>
+            {error && <p className="error">{error}</p>}
           </div>
-        ) : (
+        )}
+
+        {step === 'compose' && (
           <>
             <label className="field">
               <span>Хүлээн авагч (ажил хайгчийн Gmail)</span>
@@ -116,19 +137,46 @@ export function EmailModal({ application, onClose, onSent }: Props) {
               <span>Зурвас (та өөрөө бичнэ)</span>
               <textarea rows={8} value={body} onChange={(e) => setBody(e.target.value)} />
             </label>
-            <p className="hint">
-              Зөвшөөрөх үед энэ захиа ажил хайгчийн Gmail руу илгээгдэнэ. Хуудас солигдохгүй.
-            </p>
+            <p className="hint">Имэйл илгээгдэж, CV «Зөвшөөрсөн» болно. Хуудас солигдохгүй.</p>
             {error && <p className="error">{error}</p>}
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={sending}
-              onClick={handleSend}
-            >
-              <Send size={18} /> {sending ? 'Илгээж байна…' : 'Зөвшөөрөх · Имэйл илгээх'}
-            </button>
+            <div className="action-row">
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={sending}
+                onClick={approveWithEmail}
+              >
+                <Send size={18} /> {sending ? 'Илгээж байна…' : 'Илгээх · Зөвшөөрөх'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={sending}
+                onClick={() => setStep('choose')}
+              >
+                Буцах
+              </button>
+            </div>
           </>
+        )}
+
+        {step === 'done' && (
+          <div className="stack">
+            <div className="ok-banner">
+              <CheckCircle2 size={28} />
+              <div>
+                <strong>CV зөвшөөрөгдлөө</strong>
+                <p className="muted">
+                  {sentMail
+                    ? 'Gmail илгээх арга хэмжээ авсан. Хэрэв compose нээгдсэн бол «Илгээх» дарна уу.'
+                    : 'Gmail илгээгээгүй. Зөвхөн статус «Зөвшөөрсөн» болсон.'}
+                </p>
+              </div>
+            </div>
+            <button type="button" className="btn btn-primary" onClick={onClose}>
+              Хаах
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -25,7 +25,7 @@ export function LoginPage() {
     setLoading(true)
     try {
       await loginEmployer(username.trim(), password)
-      navigate('/employer')
+      navigate('/employer/applications')
     } catch (err) {
       setError(firebaseErrorMessage(err, 'Нэвтрэхэд алдаа гарлаа'))
     } finally {
@@ -163,7 +163,7 @@ export function RegisterPage() {
         companyName: companyName.trim(),
         phone: phone.trim(),
       })
-      navigate('/employer')
+      navigate('/employer/applications')
     } catch (err) {
       setError(firebaseErrorMessage(err, 'Бүртгэхэд алдаа гарлаа'))
     } finally {

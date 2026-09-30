@@ -4,7 +4,6 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { EmployerLayout } from './components/Layout'
 import { HomePage } from './pages/HomePage'
 import { LoginPage, RegisterPage } from './pages/AuthPages'
-import { EmployerDashboard } from './pages/employer/Dashboard'
 import {
   EmployerQrPage,
   JobCreatePage,
@@ -18,7 +17,7 @@ import {
 import { ApplyPage, ApplySuccessPage } from './pages/ApplyPages'
 import { PublicCvPage } from './pages/PublicCvPage'
 import { ScanPage } from './pages/ScanPage'
-import { HelpPage, ProfilePage, SettingsPage } from './pages/MiscPages'
+import { HelpPage } from './pages/MiscPages'
 
 export default function App() {
   return (
@@ -36,15 +35,13 @@ export default function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/employer" element={<EmployerLayout />}>
-              <Route index element={<EmployerDashboard />} />
+              <Route index element={<Navigate to="applications" replace />} />
               <Route path="jobs" element={<JobsListPage />} />
               <Route path="jobs/new" element={<JobCreatePage />} />
               <Route path="jobs/:jobId" element={<JobDetailPage />} />
               <Route path="applications" element={<ApplicationsPage />} />
               <Route path="applications/:appId" element={<ApplicationDetailPage />} />
               <Route path="qr" element={<EmployerQrPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Route>
 

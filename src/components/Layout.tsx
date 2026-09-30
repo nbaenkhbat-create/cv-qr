@@ -1,15 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { logout } from '../lib/api'
-import {
-  Briefcase,
-  FileText,
-  Home,
-  LogOut,
-  QrCode,
-  Settings,
-  User,
-} from 'lucide-react'
+import { Briefcase, FileText, LogOut, QrCode } from 'lucide-react'
 
 export function PublicHeader() {
   const { user } = useAuth()
@@ -26,7 +18,7 @@ export function PublicHeader() {
           <NavLink to="/help">Тусламж</NavLink>
         </nav>
         {user ? (
-          <Link to="/employer" className="btn btn-primary btn-sm">
+          <Link to="/employer/applications" className="btn btn-primary btn-sm">
             Хянах самбар
           </Link>
         ) : (
@@ -57,9 +49,6 @@ export function EmployerLayout() {
         </Link>
         <p className="sidebar-company">{profile?.companyName || 'Ажил олгогч'}</p>
         <nav className="sidebar-nav">
-          <NavLink to="/employer" end>
-            <Home size={18} /> Нүүр
-          </NavLink>
           <NavLink to="/employer/jobs">
             <Briefcase size={18} /> Ажил байр
           </NavLink>
@@ -68,12 +57,6 @@ export function EmployerLayout() {
           </NavLink>
           <NavLink to="/employer/qr">
             <QrCode size={18} /> CV QR
-          </NavLink>
-          <NavLink to="/employer/profile">
-            <User size={18} /> Профайл
-          </NavLink>
-          <NavLink to="/employer/settings">
-            <Settings size={18} /> Тохиргоо
           </NavLink>
         </nav>
         <button type="button" className="sidebar-logout" onClick={handleLogout}>
@@ -90,9 +73,9 @@ export function EmployerLayout() {
 export function MobileBottomNav() {
   return (
     <nav className="mobile-bottom">
-      <NavLink to="/employer" end>
-        <Home size={20} />
-        <span>Нүүр</span>
+      <NavLink to="/employer/jobs">
+        <Briefcase size={20} />
+        <span>Ажил</span>
       </NavLink>
       <NavLink to="/employer/applications">
         <FileText size={20} />
@@ -101,10 +84,6 @@ export function MobileBottomNav() {
       <NavLink to="/employer/qr">
         <QrCode size={20} />
         <span>QR</span>
-      </NavLink>
-      <NavLink to="/employer/profile">
-        <User size={20} />
-        <span>Профайл</span>
       </NavLink>
     </nav>
   )
