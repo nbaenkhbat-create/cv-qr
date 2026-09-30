@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
-  cvUrl,
   getApplication,
   getApplicationsByEmployer,
   getJob,
@@ -10,7 +9,6 @@ import {
 } from '../../lib/api'
 import type { Application, ApplicationStatus, Job } from '../../types'
 import { EmailModal } from '../../components/EmailModal'
-import { QrDownloadCard } from '../../components/QrDownloadCard'
 import { MobileBottomNav } from '../../components/Layout'
 import { Check, Search, X } from 'lucide-react'
 
@@ -195,17 +193,6 @@ export function ApplicationDetailPage() {
           )}
         </dl>
       </section>
-
-      <div className="two-col">
-        <QrDownloadCard value={cvUrl(app.id)} title={`${app.name} CV QR`} size={180} />
-        <div className="panel">
-          <h2>CV QR</h2>
-          <p className="muted">
-            Энэ QR-ийг нэрийн хуудасны нөгөө талд хэвлэж болно. Уншуулахад нийтийн
-            CV нээгдэнэ.
-          </p>
-        </div>
-      </div>
 
       {showApprove && (
         <EmailModal
